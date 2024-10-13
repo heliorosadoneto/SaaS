@@ -160,6 +160,7 @@ async function getProdutoClienteId(id) {
 }
 
 async function atualizarPreVenda(dados) {
+  console.log(dados)
   const session = verificaSessionEmpresa();
   if (!session) return null;
   try {
@@ -172,6 +173,7 @@ async function atualizarPreVenda(dados) {
         valorPago: dados.valorPago, // Atualizando valorPago
         dataEntrega: dados.dataEntrega, // Atualizando dataEntrega
         observacaoAnalise: dados.observacaoAnalise, // Atualizando observacao
+        observacao: dados.observacao,
         // ... outros campos que você deseja atualizar
       },
     });

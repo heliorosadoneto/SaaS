@@ -52,7 +52,7 @@ export default function InputEstoque({ onProdutosSelecionados }) {
 
 	return (
 		<div className='flex flex-col items-center gap-4'>
-			<div className='flex flex-col items-center gap-2 relative'>
+			<div className='flex flex-col items-center gap-2 '>
 				<label htmlFor='codigo'>Produto</label>
 				<input
 					id='codigo'
@@ -71,7 +71,7 @@ export default function InputEstoque({ onProdutosSelecionados }) {
 					onKeyDown={handleKeyDown}
 				/>
 				{sugestaoCodigo.length > 0 && (
-					<div className='absolute top-full left-0 right-0 mt-1 border-2 border-gray-300 rounded-lg shadow-md mx-2 w-[400px] bg-white z-10'>
+					<div className='absolute left-[135px] mt-[70px] border-2 border-gray-300 rounded-lg shadow-md mx-2 w-[400px] bg-white z-10'>
 						<ul className='space-y-1 max-h-[300px] overflow-y-auto p-2'>
 							{sugestaoCodigo.slice(0, 6).map((item, index) => (
 								<li

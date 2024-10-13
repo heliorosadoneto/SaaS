@@ -1,0 +1,6 @@
+
+{
+    "tailwindConfig": "./styles/tailwind.config.js",
+    "tailwindAttributes": ["className"],
+    "plugins": ["prettier-plugin-tailwindcss"]
+  }

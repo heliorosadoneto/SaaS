@@ -57,6 +57,7 @@ const handler = NextAuth({
         token.email = user.email;
         token.empresaId = user.empresaId;
         token.funcao = user.funcao;
+        token.sessionId = user.id + Date.now(); // Gera um ID de sessão único
       }
       return token;
     },

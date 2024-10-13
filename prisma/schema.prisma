@@ -100,8 +100,8 @@ model PreVendas {
   analise           Analise        @default(ANALISE)
   valorPago         Float?
   endereco          String?
-  observacao        String?
-  observacaoAnalise String?
+  observacao        String?        @db.Text
+  observacaoAnalise String?        @db.Text
   dataEntrega       String
   formaPagamento    FormaPagamento
   parcelasCredito   Int?           @default(1)

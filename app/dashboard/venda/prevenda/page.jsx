@@ -1,344 +1,335 @@
-"use client";
-import { usuario as buscarUsuarioAPI } from "@/backend/db/db";
-import { preVenda } from "@/backend/db/preVenda";
-import InputPesquisaCliente from "@/components/inputPesquisaCliente";
-import InputEstoque from "@/components/inputPesquisaProduto";
-import { useState, useCallback, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
-import { useRouter } from "next/navigation";
-import { ROUTES } from "@/routes/routes";
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { usuario as buscarUsuarioAPI } from '@/backend/db/db'
+import { preVenda } from '@/backend/db/preVenda'
+import InputPesquisaCliente from '@/components/inputPesquisaCliente'
+import InputEstoque from '@/components/inputPesquisaProduto'
+import { ROUTES } from '@/routes/routes'
+import { FaTrash, FaCheck, FaTimes, FaShoppingCart } from 'react-icons/fa'
 
 export default function Venda() {
-	const [clienteSelecionado, setClienteSelecionado] = useState(null);
-	const [produtosSelecionados, setProdutosSelecionados] = useState([]);
-	const [valorTotal, setValorTotal] = useState(0);
-	const [mostrarModal, setMostrarModal] = useState(false);
-	const [formaPagamento, setFormaPagamento] = useState("");
-	const [parcelasCredito, setParcelasCredito] = useState(1);
-	const [endereco, setEndereco] = useState("");
-	const [observacao, setObservacao] = useState("");
-	const [valorPago, setvalorPago] = useState(0);
-	const [valorPagoExibido, setValorPagoExibido] = useState("");
-	const [dataEntrega, setDataEntrega] = useState("");
-	const [usuario, setUsuario] = useState(null);
-	const router = useRouter();
+  const [clienteSelecionado, setClienteSelecionado] = useState(null)
+  const [produtosSelecionados, setProdutosSelecionados] = useState([])
+  const [valorTotal, setValorTotal] = useState(0)
+  const [mostrarModal, setMostrarModal] = useState(false)
+  const [formaPagamento, setFormaPagamento] = useState('')
+  const [parcelasCredito, setParcelasCredito] = useState(1)
+  const [endereco, setEndereco] = useState('')
+  const [observacao, setObservacao] = useState('')
+  const [valorPago, setValorPago] = useState(0)
+  const [valorPagoExibido, setValorPagoExibido] = useState('')
+  const [dataEntrega, setDataEntrega] = useState('')
+  const [usuario, setUsuario] = useState(null)
+  const router = useRouter()
 
-	useEffect(() => {
-		const buscarUsuario = async () => {
-			try {
-				const resposta = await buscarUsuarioAPI();
-				setUsuario(resposta);
-			} catch (erro) {
-				console.error("Erro ao buscar usuário:", erro);
-			}
-		};
-		buscarUsuario();
-	}, []);
+  useEffect(() => {
+    const buscarUsuario = async () => {
+      try {
+        const resposta = await buscarUsuarioAPI()
+        setUsuario(resposta)
+      } catch (erro) {
+        console.error('Erro ao buscar usuário:', erro)
+      }
+    }
+    buscarUsuario()
+  }, [])
 
-	const handlerClienteSelecionado = useCallback((cliente) => {
-		setClienteSelecionado(cliente[0]);
-	}, []);
+  const handlerClienteSelecionado = useCallback((cliente) => {
+    setClienteSelecionado(cliente[0])
+  }, [])
 
-	const handleProdutosSelecionados = useCallback((produtoOuProdutos) => {
-		setProdutosSelecionados((prevProdutos) => {
-			const novosProdutos = Array.isArray(produtoOuProdutos)
-				? [...prevProdutos, ...produtoOuProdutos]
-				: [...prevProdutos, produtoOuProdutos];
+  const handleProdutosSelecionados = useCallback((produtoOuProdutos) => {
+    setProdutosSelecionados((prevProdutos) => {
+      const novosProdutos = Array.isArray(produtoOuProdutos)
+        ? [...prevProdutos, ...produtoOuProdutos]
+        : [...prevProdutos, produtoOuProdutos]
 
-			const novoValorTotal = novosProdutos.reduce(
-				(total, produto) => total + parseFloat(produto.valor),
-				0
-			);
-			setValorTotal(novoValorTotal);
+      const novoValorTotal = novosProdutos.reduce(
+        (total, produto) => total + parseFloat(produto.valor),
+        0
+      )
+      setValorTotal(novoValorTotal)
 
-			return novosProdutos;
-		});
-	}, []);
+      return novosProdutos
+    })
+  }, [])
 
-	const removerProduto = useCallback((index) => {
-		setProdutosSelecionados((prevProdutos) => {
-			const novosProdutos = prevProdutos.filter((_, i) => i !== index);
-			const novoValorTotal = novosProdutos.reduce(
-				(total, produto) => total + parseFloat(produto.valor),
-				0
-			);
-			setValorTotal(novoValorTotal);
-			return novosProdutos;
-		});
-	}, []);
+  const removerProduto = useCallback((index) => {
+    setProdutosSelecionados((prevProdutos) => {
+      const novosProdutos = prevProdutos.filter((_, i) => i !== index)
+      const novoValorTotal = novosProdutos.reduce(
+        (total, produto) => total + parseFloat(produto.valor),
+        0
+      )
+      setValorTotal(novoValorTotal)
+      return novosProdutos
+    })
+  }, [])
 
-	const abrirModalPagamento = () => {
-		if (clienteSelecionado && produtosSelecionados.length > 0) {
-			setMostrarModal(true);
-		} else {
-			toast.error("Selecione um cliente e pelo menos um produto");
-		}
-	};
+  const abrirModalPagamento = () => {
+    if (clienteSelecionado && produtosSelecionados.length > 0) {
+      setMostrarModal(true)
+    } else {
+      toast.error('Selecione um cliente e pelo menos um produto')
+    }
+  }
 
-	const handleChangePago = (e) => {
-		const value = e.target.value.replace(/\D/g, ""); // Remove todos os caracteres não numéricos
-		const floatValue = parseFloat(value) / 100; // Converte para float
-		setvalorPago(floatValue); // Armazena o valor como número
-		const formattedValue = new Intl.NumberFormat("pt-BR", {
-			style: "currency",
-			currency: "BRL",
-		}).format(floatValue); // Formata para exibição
-		setValorPagoExibido(formattedValue); // Armazena o valor formatado para exibição
+  const handleChangePago = (e) => {
+    const value = e.target.value.replace(/\D/g, '')
+    const floatValue = parseFloat(value) / 100
+    setValorPago(floatValue)
+    const formattedValue = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(floatValue)
+    setValorPagoExibido(formattedValue)
 
-		// Atualiza o valor das parcelas com base no valor pago
-		if (floatValue > 0) {
-			setParcelasCredito(1); // Reseta as parcelas para 1 quando um novo valor é inserido
-		} else {
-			setParcelasCredito(1); // Mantém o valor padrão se não houver valor a pagar
-		}
-	};
+    if (floatValue > 0) {
+      setParcelasCredito(1)
+    } else {
+      setParcelasCredito(1)
+    }
+  }
 
-	const fecharModalPagamento = () => {
-		setMostrarModal(false);
-	};
+  const fecharModalPagamento = () => {
+    setMostrarModal(false)
+  }
 
-	const handleFormaPagamentoChange = (e) => {
-		setFormaPagamento(e.target.value);
-	};
+  const handleFormaPagamentoChange = (e) => {
+    setFormaPagamento(e.target.value)
+  }
 
-	const handleParcelasCreditoChange = (e) => {
-		setParcelasCredito(Number(e.target.value));
-	};
+  const handleParcelasCreditoChange = (e) => {
+    setParcelasCredito(Number(e.target.value))
+  }
 
-	const finalizarVenda = async () => {
-		if (!valorTotal && !formaPagamento) {
-			toast.error("Selecione uma forma de pagamento");
-			return null;
-		}
-		try {
-			const dadosVenda = {
-				produtos: produtosSelecionados,
-				total: valorTotal,
-				pagamento: {
-					forma: formaPagamento.toUpperCase(),
-					parcelas: parcelasCredito,
-				},
-				cliente: clienteSelecionado,
-				endereco: endereco,
-				observacao: observacao,
-				valorPago: valorPago,
-				dataEntrega: dataEntrega || new Date().toLocaleDateString('pt-BR'),
-			};
-			await preVenda(dadosVenda);
-			toast.success("Venda realizada com sucesso");
-			router.push(ROUTES.LISTA_PREVENDA);
+  const finalizarVenda = async () => {
+    if (!valorTotal && !formaPagamento) {
+      toast.error('Selecione uma forma de pagamento')
+      return null
+    }
+    try {
+      const dadosVenda = {
+        produtos: produtosSelecionados,
+        total: valorTotal,
+        pagamento: {
+          forma: formaPagamento.toUpperCase(),
+          parcelas: parcelasCredito,
+        },
+        cliente: clienteSelecionado,
+        endereco: endereco,
+        observacao: observacao,
+        valorPago: valorPago,
+        dataEntrega: dataEntrega || new Date().toLocaleDateString('pt-BR'),
+      }
+      await preVenda(dadosVenda)
+      toast.success('Venda realizada com sucesso')
+      router.push(ROUTES.LISTA_PREVENDA)
 
-			// Limpar todos os campos
-			setClienteSelecionado(null);
-			setProdutosSelecionados([]);
-			setValorTotal(0);
-			setFormaPagamento("");
-			setParcelasCredito(1);
-			setEndereco("");
-			setObservacao("");
-			fecharModalPagamento();
-		} catch (error) {
-			toast.error("Erro ao realizar a venda, confira os campos");
-		}
-	};
+      setClienteSelecionado(null)
+      setProdutosSelecionados([])
+      setValorTotal(0)
+      setFormaPagamento('')
+      setParcelasCredito(1)
+      setEndereco('')
+      setObservacao('')
+      fecharModalPagamento()
+    } catch (error) {
+      toast.error('Erro ao realizar a venda, confira os campos')
+    }
+  }
 
-	return (
-		<div className='flex h-[calc(100vh-40px)]'>
-			<div className='w-[40%] flex flex-col justify-center items-center'>
-				<InputPesquisaCliente onClienteSelect={handlerClienteSelecionado} />
-				<InputEstoque onProdutosSelecionados={handleProdutosSelecionados} />
-				<label htmlFor='endereco'>Endereço</label>
-				<input
-					type='text'
-					placeholder='Endereço...'
-					name='endereco'
-					value={endereco}
-					onChange={(e) => setEndereco(e.target.value)}
-					autoComplete={`new-${Math.random()}`}
-					className='text-black p-1 m-1 w-[250px] border-2 border-black rounded-lg'
-				/>
-				<label htmlFor='data'>DATA DE ENTREGA</label>
-				<input
-					className='text-black p-1 m-1 w-[250px] border-2 border-black rounded-lg'
-					type='date'
-					name='dataDeEntrega'
-					min={new Date().toISOString().split("T")[0]}
-					defaultValue={new Date().toISOString().split("T")[0]}
-					onChange={(e) => setDataEntrega(e.target.value)}
-				/>
-				<label htmlFor='observacao'>Observação:</label>
-				<textarea
-					id='observacao'
-					placeholder='Observação...'
-					value={observacao}
-					onChange={(e) => setObservacao(e.target.value)}
-					className='text-black w-[80%]'
-					rows={3}
-				/>
-			</div>
-			<div className='flex flex-col w-[60%]'>
-				<div className='h-[100px] flex flex-col justify-center items-center'>
-					<h1 className='text-white text-xl text-center font-semibold mb-2'>Produtos</h1>
-					<ToastContainer autoClose={2000} position='top-center' />
-					{clienteSelecionado ? (
-						<div className='bg-white rounded-lg shadow-md p-1 mb-1 w-[50%]'>
-							<div className='flex justify-between items-center'>
-								<h3 className='text-xl font-semibold text-gray-800'>
-									Cliente:{" "}
-									<span className='text-blue-600'>{clienteSelecionado.nome}</span>
-								</h3>
-								<button
-									onClick={() => setClienteSelecionado(null)}
-									className='bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded transition duration-300 ease-in-out'>
-									Remover
-								</button>
-							</div>
-						</div>
-					) : (
-						<div className='bg-gray-100 rounded-lg w-[40%] text-center'>
-							<h1 className='text-1xl font-bold text-gray-600'>Nenhum cliente selecionado</h1>
-						</div>
-					)}
-				</div>
-				<h2 className='text-white text-xl text-center font-semibold mb-2'>Produtos selecionados</h2>
-				<div className='h-[300px]'>
-					{produtosSelecionados.length > 0 ? (
-						<div className='max-h-[300px] overflow-y-auto'>
-							<ul className='mx-5'>
-								{produtosSelecionados.map((produto, index) => (
-									<li
-										key={index}
-										className='bg-gradient-to-r from-white to-gray-100 text-gray-800 rounded-lg shadow-md p-4 mb-2 flex justify-between items-center hover:shadow-lg transition duration-300 ease-in-out'>
-										<div className='flex flex-col'>
-											<span className='font-semibold text-lg'>{produto.produto}</span>
-											<div className='flex space-x-4 text-sm mt-1'>
-												<span className='text-green-600'>Valor: R$ {parseFloat(produto.valor).toFixed(2)}</span>
-												<span className='text-blue-600'>Código: {produto.codigo}</span>
-											</div>
-										</div>
-										<button
-											onClick={() => removerProduto(index)}
-											className='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center'>
-											<svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5 mr-1' viewBox='0 0 20 20' fill='currentColor'>
-												<path
-													fillRule='evenodd'
-													d='M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8a1 1 0 00-1-1z'
-													clipRule='evenodd'
-												/>
-											</svg>
-											Remover
-										</button>
-									</li>
-								))}
-							</ul>
-						</div>
-					) : (
-						<div className='h-[300px] border border-spacing-2 border-white rounded-lg flex justify-center items-center'>
-							<p className='text-white'>Nenhum produto selecionado</p>
-						</div>
-					)}
-				</div>
-				{produtosSelecionados.length > 0 && (
-					<div>
-						<h1 className='text-white text-xl font-semibold mt-4'>Valor Total: R$ {valorTotal.toFixed(2)}</h1>
-						<button
-							onClick={abrirModalPagamento}
-							className='bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center'>
-							<svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5 mr-1' viewBox='0 0 20 20' fill='currentColor'>
-								<path
-									fillRule='evenodd'
-									d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
-									clipRule='evenodd'
-								/>
-							</svg>
-							Forma de pagamento
-						</button>
-						{mostrarModal && (
-							<div className='text-black fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50'>
-								<div className='flex flex-col bg-white w-[50%] h-[50%] p-2 rounded-lg'>
-									<h2 className='text-1xl text-center'>Formas de Pagamento</h2>
-									<div className='h-[100%]'>
-										<div className='flex justify-between p-5'>
-											<span>Valor</span>
-											<p>{valorTotal.toFixed(2)}</p>
-											<label htmlFor='valorPago' className='block text-sm font-medium text-gray-700'>Valor á Pagar:</label>
-											<input
-												type='text'
-												name='valorPago'
-												id='valorPago'
-												value={valorPagoExibido}
-												onChange={handleChangePago}
-												className='mt-1 p-2 block w-full shadow-sm sm:text-sm border border-gray-300 rounded-md'
-											/>
-										</div>
-										<div className='flex flex-wrap gap-4 mb-4'>
-											{["dinheiro", "pix", "carne", "debito", "credito"].map((tipo) => (
-												<div key={tipo} className='flex items-center gap-2'>
-													<input
-														type='radio'
-														name='formaPagamento'
-														id={tipo}
-														value={tipo}
-														checked={formaPagamento === tipo}
-														onChange={handleFormaPagamentoChange}
-													/>
-													<label htmlFor={tipo} className='capitalize'>{tipo}</label>
-												</div>
-											))}
-										</div>
-										<div className='h-[100px]'>
-											{formaPagamento === "credito" && (
-												<div className='p-4 bg-gray-100 rounded-lg'>
-													<h3 className='text-lg font-semibold mb-2'>Opções de Parcelamento</h3>
-													<select
-														value={parcelasCredito}
-														onChange={handleParcelasCreditoChange}
-														className='w-full p-2 border rounded'>
-														{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((parcela) => {
-															let valorParcela = valorPago > 0 ? valorPago / parcela : valorTotal / parcela; // Usa o valor pago se existir
-															return (
-																<option className='text-lg' key={parcela} value={parcela}>
-																	{parcela}x de R$ {valorParcela.toFixed(2)}{" "}
-																</option>
-															);
-														})}
-													</select>
-												</div>
-											)}
-										</div>
-										<div className='mt-auto pt-4 flex justify-between'>
-											<button
-												onClick={fecharModalPagamento}
-												className='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center'>
-												<svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5 mr-1' viewBox='0 0 20 20' fill='currentColor'>
-													<path
-														fillRule='evenodd'
-														d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z'
-														clipRule='evenodd'
-													/>
-												</svg>
-												Fechar
-											</button>
-											<button
-												onClick={finalizarVenda}
-												className='bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center'>
-												<svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5 mr-1' viewBox='0 0 20 20' fill='currentColor'>
-													<path
-														fillRule='evenodd'
-														d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
-														clipRule='evenodd'
-													/>
-												</svg>
-												Finalizar
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						)}
-					</div>
-				)}
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex h-[calc(100vh-40px)] bg-gray-900 text-white">
+      <div className="w-[40%] flex flex-col justify-center items-center p-6 bg-gray-800 rounded-lg shadow-xl">
+        <InputPesquisaCliente onClienteSelect={handlerClienteSelecionado} />
+        <InputEstoque onProdutosSelecionados={handleProdutosSelecionados} />
+        
+        <label htmlFor="endereco" className="mt-4 text-blue-300">Endereço</label>
+        <input
+          type="text"
+          placeholder="Endereço..."
+          name="endereco"
+          value={endereco}
+          onChange={(e) => setEndereco(e.target.value)}
+          autoComplete={`new-${Math.random()}`}
+          className="p-2 m-1 w-full border-2 border-gray-700 rounded-lg bg-gray-700 text-white focus:border-blue-500 focus:outline-none transition duration-300"
+        />
+        
+        <label htmlFor="data" className="mt-4 text-blue-300">DATA DE ENTREGA</label>
+        <input
+          className="p-2 m-1 w-full border-2 border-gray-700 rounded-lg bg-gray-700 text-white focus:border-blue-500 focus:outline-none transition duration-300"
+          type="date"
+          name="dataDeEntrega"
+          min={new Date().toISOString().split('T')[0]}
+          defaultValue={new Date().toISOString().split('T')[0]}
+          onChange={(e) => setDataEntrega(e.target.value)}
+        />
+        
+        <label htmlFor="observacao" className="mt-4 text-blue-300">Observação:</label>
+        <textarea
+          id="observacao"
+          placeholder="Observação..."
+          value={observacao}
+          onChange={(e) => setObservacao(e.target.value)}
+          className="p-2 m-1 w-full border-2 border-gray-700 rounded-lg bg-gray-700 text-white focus:border-blue-500 focus:outline-none transition duration-300"
+          rows={3}
+        />
+      </div>
+      
+      <div className="flex flex-col w-[60%] p-6">
+        <div className="h-[100px] flex flex-col justify-center items-center">
+          <h1 className="text-2xl font-bold mb-4 text-blue-400">Produtos</h1>
+          <ToastContainer autoClose={2000} position="top-center" />
+          {clienteSelecionado ? (
+            <div className="bg-gray-800 rounded-lg shadow-md p-3 mb-4 w-full max-w-md border border-blue-500">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-300">
+                  Cliente: <span className="text-white">{clienteSelecionado.nome}</span>
+                </h3>
+                <button
+                  onClick={() => setClienteSelecionado(null)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded transition duration-300 ease-in-out"
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-800 rounded-lg w-full max-w-md text-center p-3 border border-gray-700">
+              <h1 className="text-xl font-bold text-gray-400">Nenhum cliente selecionado</h1>
+            </div>
+          )}
+        </div>
+        
+        <h2 className="text-2xl font-bold mb-4 text-blue-400">Produtos selecionados</h2>
+        <div className="flex-grow overflow-auto mb-4">
+          {produtosSelecionados.length > 0 ? (
+            <ul className="space-y-2">
+              {produtosSelecionados.map((produto, index) => (
+                <li
+                  key={index}
+                  className="bg-gray-800 text-white rounded-lg shadow-md p-4 flex justify-between items-center hover:bg-gray-700 transition duration-300 ease-in-out border border-gray-700"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-lg text-blue-300">{produto.produto}</span>
+                    <div className="flex space-x-4 text-sm mt-1">
+                      <span className="text-green-400">Valor: R$ {parseFloat(produto.valor).toFixed(2)}</span>
+                      <span className="text-blue-400">Código: {produto.codigo}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removerProduto(index)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out flex items-center"
+                  >
+                    <FaTrash className="mr-2" />
+                    Remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="h-[300px] border border-gray-700 rounded-lg flex justify-center items-center">
+              <p className="text-gray-400">Nenhum produto selecionado</p>
+            </div>
+          )}
+        </div>
+        
+        {produtosSelecionados.length > 0 && (
+          <div className="mt-auto">
+            <h1 className="text-2xl font-bold mb-4 text-green-400">Valor Total: R$ {valorTotal.toFixed(2)}</h1>
+            <button
+              onClick={abrirModalPagamento}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out flex items-center justify-center w-full"
+            >
+              <FaShoppingCart className="mr-2" />
+              Forma de pagamento
+            </button>
+          </div>
+        )}
+        
+        {mostrarModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-gray-800 w-full max-w-2xl p-6 rounded-lg shadow-xl border border-blue-500">
+              <h2 className="text-2xl font-bold mb-6 text-center text-blue-400">Formas de Pagamento</h2>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-white">Valor Total:</span>
+                  <p className="text-xl font-bold text-green-400">R$ {valorTotal.toFixed(2)}</p>
+                </div>
+                <div>
+                  <label htmlFor="valorPago" className="block text-sm font-medium text-gray-300 mb-1">Valor a Pagar:</label>
+                  <input
+                    type="text"
+                    name="valorPago"
+                    id="valorPago"
+                    value={valorPagoExibido}
+                    onChange={handleChangePago}
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-semibold text-white mb-2">Forma de Pagamento:</p>
+                  <div className="flex flex-wrap gap-4">
+                    {['dinheiro', 'pix', 'carne', 'debito', 'credito'].map((tipo) => (
+                      <label key={tipo} className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name="formaPagamento"
+                          value={tipo}
+                          checked={formaPagamento === tipo}
+                          onChange={handleFormaPagamentoChange}
+                          className="form-radio text-blue-600"
+                        />
+                        <span className="ml-2 text-white capitalize">{tipo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {formaPagamento === 'credito' && (
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2 text-blue-300">Opções de Parcelamento</h3>
+                    <select
+                      value={parcelasCredito}
+                      onChange={handleParcelasCreditoChange}
+                      className="w-full p-2 bg-gray-600 border border-gray-500 rounded text-white  focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((parcela) => {
+                        let valorParcela = valorPago > 0 ? valorPago / parcela : valorTotal / parcela
+                        return (
+                          <option key={parcela} value={parcela}>
+                            {parcela}x de R$ {valorParcela.toFixed(2)}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                )}
+                <div className="flex justify-between mt-6">
+                  <button
+                    onClick={fecharModalPagamento}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out flex items-center"
+                  >
+                    <FaTimes className="mr-2" />
+                    Fechar
+                  </button>
+                  <button
+                    onClick={finalizarVenda}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out flex items-center"
+                  >
+                    <FaCheck className="mr-2" />
+                    Finalizar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
