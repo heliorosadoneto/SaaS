@@ -8,19 +8,20 @@ datasource db {
 }
 
 model Empresas {
-  id        Int         @id @default(autoincrement())
-  nome      String
-  email     String      @unique
-  cnpj      String
-  cpf       String
-  cidade    String
-  endereco  String
-  criadoEm  DateTime    @default(now())
-  estoques  Estoques[]
-  usuarios  Usuarios[]
-  clientes  Clientes[]
-  vendas    Vendas[]
-  PreVendas PreVendas[]
+  id         Int          @id @default(autoincrement())
+  nome       String
+  email      String       @unique
+  cnpj       String
+  cpf        String
+  cidade     String
+  endereco   String
+  criadoEm   DateTime     @default(now())
+  estoques   Estoques[]
+  usuarios   Usuarios[]
+  clientes   Clientes[]
+  vendas     Vendas[]
+  PreVendas  PreVendas[]
+  Documentos Documentos[]
 }
 
 model Estoques {
@@ -52,21 +53,35 @@ model Usuarios {
 }
 
 model Clientes {
-  id         Int         @id @default(autoincrement())
-  nome       String
-  endereco   String
-  cpf        String      @unique
-  identidade String      @unique
-  cidade     String
-  estado     String
-  telefone   String
-  email      String      @unique
-  empresaId  Int
-  empresa    Empresas    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  vendas     Vendas[]
-  PreVendas  PreVendas[]
+  id                      Int          @id @default(autoincrement())
+  nome                    String
+  endereco                String
+  cpf                     String       @unique
+  identidade              String       @unique
+  cidade                  String
+  estado                  String
+  telefone                String
+  email                   String       @unique
+  fotoCliente             String?
+  fotoComprovanteEndereco String?
+  fotoIdentidade          String?
+  fotoCPF                 String?
+  empresaId               Int
+  empresa                 Empresas     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  vendas                  Vendas[]
+  PreVendas               PreVendas[]
+  Documentos              Documentos[]
 
   @@index([empresaId], map: "clientes_empresaId_fkey")
+}
+
+model Documentos {
+  id         Int      @id @default(autoincrement())
+  documento  String
+  empresaId  Int
+  empresa    Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  clientesId Int
+  Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
 }
 
 model Vendas {

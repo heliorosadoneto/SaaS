@@ -9,6 +9,7 @@ import { ROUTES } from '@/routes/routes'
 import { FaCheckCircle, FaEye, FaShoppingCart, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import Loading from '@/components/loading'
 
 const ListaPreVenda = () => {
   const [preVendaData, setPreVendaData] = useState([])
@@ -106,14 +107,11 @@ const ListaPreVenda = () => {
     }
   }
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  }
+  
 
   return (
     <div className="p-6 bg-gray-900 text-white min-h-screen">
+      <Loading isLoading={isLoading}/>
       <ToastContainer limit={20} position="top-right" autoClose={3000} />
       <h1 className="mb-8 text-center text-4xl font-bold text-blue-400 animate-pulse">
         Pré-Venda
