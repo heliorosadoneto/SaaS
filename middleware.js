@@ -4,9 +4,9 @@ import { getToken } from "next-auth/jwt"; // Importa a função para obter o tok
 
 export async function middleware(req) {
   // Ignora as rotas de API
-  if (req.nextUrl.pathname.startsWith("/api")) {
-    return NextResponse.next();
-  }
+  // if (req.nextUrl.pathname.startsWith("/api")) {
+  //   return NextResponse.next();
+  // }
 
   // Obtém o token JWT dos cookies
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });

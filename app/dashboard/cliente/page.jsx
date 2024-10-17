@@ -73,7 +73,7 @@ export default function FuturisticClientForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (validateForm()) {
       const formDataToSubmit = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
@@ -81,12 +81,22 @@ export default function FuturisticClientForm() {
           formDataToSubmit.append(key, value);
         }
       });
-
-      // Enviar dados do formulário e arquivos para a função CadastroCliente
-      const success = await CadastroCliente(formDataToSubmit);
-
-      if (success) {
+  
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          body: formDataToSubmit, // Enviando o FormData diretamente
+        });
+  
+        if (!response.ok) {
+          throw new Error('Erro ao cadastrar cliente');
+        }
+  
+        const data = await response.json();
         toast.success("Cliente cadastrado com sucesso!");
+        console.log('Resposta:', data);
+  
+        // Limpar o formulário após o sucesso
         setFormData({
           nome: "",
           endereco: "",
@@ -101,13 +111,15 @@ export default function FuturisticClientForm() {
           fotoIdentidade: null,
           fotoCPF: null,
         });
-      } else {
+      } catch (error) {
         toast.error(
           "Erro ao cadastrar cliente. Verifique se o CPF já está cadastrado.",
         );
+        console.error('Erro:', error);
       }
     }
   };
+  
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-900 p-4">
