@@ -62,10 +62,7 @@ model Clientes {
   estado                  String
   telefone                String
   email                   String       @unique
-  fotoCliente             String?
-  fotoComprovanteEndereco String?
-  fotoIdentidade          String?
-  fotoCPF                 String?
+ 
   empresaId               Int
   empresa                 Empresas     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   vendas                  Vendas[]

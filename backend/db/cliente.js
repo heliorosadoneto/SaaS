@@ -2,16 +2,18 @@
 
 import prisma from "../prisma";
 import { verificaSessionEmpresa } from "../verificaSessionEmpresa";
-
 const session = verificaSessionEmpresa();
-async function getCliente() {
-  const cliente = await prisma.clientes.findMany({
-    where: {
-      empresaId: (await session).empresa,
-    },
-  });
+async function Create(dados) {
+  if (!(await session).empresa) return false;
 
-  return cliente;
+  try {
+    await prisma.clientes.createMany({
+      data: {
+        dados,
+        empresaId: (await session).empresa,
+      },
+    });
+  } catch (error) {}
 }
 
-export default getCliente;
+export default Create;

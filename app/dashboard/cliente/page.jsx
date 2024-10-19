@@ -1,6 +1,4 @@
 "use client";
-
-import CadastroCliente from "@/backend/db/cliente";
 import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,6 +18,9 @@ export default function FuturisticClientForm() {
     fotoIdentidade: null,
     fotoCPF: null,
   });
+
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [loading, setLoading] = useState(false); // Estado de carregamento
 
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -46,25 +47,13 @@ export default function FuturisticClientForm() {
       fotoCPF,
     } = formData;
 
-    const regex = {
-      cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
-      email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      identidade: /^\d{7,8}$/,
-    };
-
-   
-    if (!regex.cpf.test(cpf)) {
-      toast.error("CPF deve estar no formato 123.456.789-01.");
+    if (!cpf) {
+      toast.error("insira o CPF");
       return false;
     }
 
-    if (!regex.email.test(email)) {
+    if (!email) {
       toast.error("Email inválido.");
-      return false;
-    }
-
-    if (!regex.identidade.test(identidade)) {
-      toast.error("Identidade deve ter 7 ou 8 dígitos.");
       return false;
     }
 
@@ -73,7 +62,7 @@ export default function FuturisticClientForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (validateForm()) {
       const formDataToSubmit = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
@@ -81,21 +70,27 @@ export default function FuturisticClientForm() {
           formDataToSubmit.append(key, value);
         }
       });
-  
+
+      setLoading(true); // Inicia o carregamento
+
       try {
-        const response = await fetch('/api/posts', {
-          method: 'POST',
-          body: formDataToSubmit, // Enviando o FormData diretamente
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          body: formDataToSubmit,
+          headers: {
+            Accept: "application/json",
+          },
         });
-  
+
+        console.log("resultados:", response);
         if (!response.ok) {
-          throw new Error('Erro ao cadastrar cliente');
+          throw new Error("Erro ao cadastrar cliente");
         }
-  
+
         const data = await response.json();
         toast.success("Cliente cadastrado com sucesso!");
-        console.log('Resposta:', data);
-  
+        console.log("Resposta:", data);
+
         // Limpar o formulário após o sucesso
         setFormData({
           nome: "",
@@ -111,15 +106,17 @@ export default function FuturisticClientForm() {
           fotoIdentidade: null,
           fotoCPF: null,
         });
+         
       } catch (error) {
         toast.error(
           "Erro ao cadastrar cliente. Verifique se o CPF já está cadastrado.",
         );
-        console.error('Erro:', error);
+        console.error("Erro:", error);
+      } finally {
+        setLoading(false); // Termina o carregamento
       }
     }
   };
-  
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-900 p-4">
@@ -150,7 +147,7 @@ export default function FuturisticClientForm() {
                       name={key}
                       accept="image/*"
                       onChange={handleInputChange}
-                      
+                      required
                       className="w-full transform rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-white transition duration-300 ease-in-out hover:scale-105 focus:scale-105 focus:border-blue-400 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-50"
                     />
                   </div>
@@ -170,7 +167,7 @@ export default function FuturisticClientForm() {
                       name={key}
                       value={value}
                       onChange={handleInputChange}
-                      
+                      required
                       className="w-full transform rounded-md border border-gray-600 bg-gray-700 px-4 py-2 text-white transition duration-300 ease-in-out hover:scale-105 focus:scale-105 focus:border-blue-400 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-50"
                     />
                   </div>
@@ -180,34 +177,33 @@ export default function FuturisticClientForm() {
           </div>
           <button
             type="submit"
-            className="w-full transform rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-semibold text-white shadow-lg transition duration-300 ease-in-out hover:-translate-y-1 hover:shadow-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+            className={`w-full transform rounded-md bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-semibold text-white shadow-lg transition duration-300 ease-in-out hover:-translate-y-1 hover:shadow-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={loading} // Desabilita o botão enquanto está carregando
           >
-            Cadastrar
+            {loading ? "Carregando..." : "Cadastrar"} {/* Exibe mensagem de carregamento */}
           </button>
         </form>
+        {Object.keys(uploadProgress).length > 0 && (
+          <div className="mt-4">
+            {Object.entries(uploadProgress).map(([fileName, progress]) => (
+              <div key={fileName} className="mb-2">
+                <label className="block text-sm text-blue-300">
+                  {fileName}
+                </label>
+                <div className="h-2 rounded bg-gray-700">
+                  <div
+                    className="h-full bg-blue-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <ToastContainer />
       </div>
-      <style jsx global>{`
-        @keyframes glow {
-          0%,
-          100% {
-            text-shadow:
-              0 0 10px rgba(66, 153, 225, 0.5),
-              0 0 20px rgba(66, 153, 225, 0.3),
-              0 0 30px rgba(66, 153, 225, 0.2);
-          }
-          50% {
-            text-shadow:
-              0 0 20px rgba(66, 153, 225, 0.8),
-              0 0 30px rgba(66, 153, 225, 0.5),
-              0 0 40px rgba(66, 153, 225, 0.3);
-          }
-        }
-        .animate-pulse {
-          animation: glow 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }
-
