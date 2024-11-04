@@ -161,7 +161,7 @@ const EstoqueFuturista = () => {
 
   return (
     <div className="container mx-auto p-4 bg-gray-900 text-white min-h-screen">
-      <h1 className="text-4xl font-bold text-center mb-8 text-blue-400 animate-pulse">Cadastro de Estoque</h1>
+      <h1 className="text-4xl font-bold text-center mb-8 text-blue-400 ">Cadastro de Estoque</h1>
       
       <form onSubmit={handleFormEstoque} className="mb-8 bg-gray-800 p-6 rounded-lg shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

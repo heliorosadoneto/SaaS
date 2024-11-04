@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { AcaoAnalise, getPreVendaCodigo, atualizarPreVenda } from '@/backend/db/preVenda'
-import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa'
+import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaHistory, FaList, FaRegFile } from 'react-icons/fa'
 import { usuario as buscarUsuarioAPI } from '@/backend/db/db'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useRouter } from 'next/navigation'
 import { ROUTES } from '@/routes/routes'
+import Link from 'next/link'
+import InputPesquisaCliente from '@/components/inputPesquisaCliente'
 
 export default function ProductPage({ params }) {
   const { id } = params
@@ -147,9 +149,13 @@ export default function ProductPage({ params }) {
 
       {cliente && (
         <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
-            Informações do Cliente
-          </h2>
+          
+
+            
+          
+            <h2 className="text-2xl font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
+              Informações do Cliente
+            </h2>
           <p className="text-lg mb-4 text-gray-300 uppercase">{`Vendedor: ${cliente.vendedor.nome}`}</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -159,14 +165,18 @@ export default function ProductPage({ params }) {
                 { label: 'CPF', value: cliente.cpf },
                 { label: 'Identidade', value: cliente.identidade },
                 { label: 'Endereço', value: cliente.endereco },
-                { label: 'Email', value: cliente.email },
-                { label: 'Telefone', value: cliente.telefone },
+
               ].map(({ label, value }) => (
                 <p key={label} className="mb-2 text-lg">
                   <strong className="text-gray-400 uppercase">{label}:</strong>{' '}
                   <span className="text-gray-200">{value}</span>
                 </p>
               ))}
+              <Link href='*'>
+                <h2 className=" flex items-center gap-2 text-sm font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
+                  <FaRegFile /> Histórico
+                </h2>
+              </Link>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <p className="mb-2 text-lg">
@@ -203,8 +213,8 @@ export default function ProductPage({ params }) {
                 <p className="mb-2 text-lg">
                   <strong className="text-gray-400 uppercase">Valor por Parcela:</strong>{' '}
                   <span className="text-gray-200">
-                    {`${cliente.parcelas} X R$ ${cliente.valorPago > 0 
-                      ? (cliente.valorPago / cliente.parcelas).toFixed(2) 
+                    {`${cliente.parcelas} X R$ ${cliente.valorPago > 0
+                      ? (cliente.valorPago / cliente.parcelas).toFixed(2)
                       : (cliente.valorTotal / cliente.parcelas).toFixed(2)}`}
                   </span>
                 </p>

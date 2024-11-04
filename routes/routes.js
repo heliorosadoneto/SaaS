@@ -7,5 +7,6 @@ export const ROUTES = {
   FINANCEIRO: "/dashboard/financeiro",
   CAIXA: "/dashboard/caixa",
   VENDA: "/dashboard/venda",
-  CLIENTE: "/dashboard/cliente"
+  CLIENTE: "/dashboard/cliente",
+  LISTA_CLIENTES: '/dashboard/cliente/listaclientes'
 };

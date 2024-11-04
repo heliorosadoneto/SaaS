@@ -25,10 +25,9 @@ const Header = () => {
 
   const menuItems = [
     { href: '/dashboard', label: 'Home', icon: <FaHome /> },
-    { href: ROUTES.VENDA, label: 'Vendas', icon: <FaShoppingCart />, dropdown: [
-      { href: ROUTES.LISTA_PREVENDA, label: 'Listar Pré-Venda' },
-      { href: ROUTES.PREVENDA, label: 'Pré-venda' },
-    ]},
+    {
+      href: ROUTES.VENDA, label: 'Vendas', icon: <FaShoppingCart />
+    },
     { href: ROUTES.CAIXA, label: 'Caixa', icon: <FaCashRegister /> },
     { href: ROUTES.ESTOQUE, label: 'Estoque', icon: <FaBoxes /> },
     { href: ROUTES.FINANCEIRO, label: 'Financeiro', icon: <FaChartLine /> },

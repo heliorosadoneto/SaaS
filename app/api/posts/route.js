@@ -6,7 +6,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 export async function POST(req) {
   const session = await verificaSessionEmpresa();
 
-  if (!session.empresa) {
+  if (!session?.empresa) {
     return new Response("Empresa não encontrada", { status: 403 });
   }
 
@@ -14,69 +14,110 @@ export async function POST(req) {
     const formData = await req.formData();
     const data = {};
     const files = [];
+    let clienteId;
 
-    // Iterar sobre os pares chave-valor do FormData
+    // Processar o FormData
     formData.forEach((value, key) => {
       if (value instanceof File) {
         files.push({ key, file: value });
       } else {
-        data[key] = value;
+        try {
+          data[key] = JSON.parse(value);
+        } catch {
+          data[key] = value;
+        }
       }
     });
 
     // Verificar se o cliente já existe pelo CPF e empresa
-
-    let existClinte = await prisma.clientes.findUnique({
-      where: {
-        cpf: data.cpf,
-        empresaId: session.empresa,
-      },
+    let cliente = await prisma.clientes.findFirst({
+      where: { cpf: data.cpf.toString(), empresaId: session.empresa },
     });
 
-    // Se o cliente não existir, cria um novo
-    if (!existClinte) {
-      await prisma.clientes.create({
+    // Criar cliente se não existir
+    if (!cliente) {
+      cliente = await prisma.clientes.create({
         data: {
           nome: data.nome,
           email: data.email,
-          identidade: data.identidade,
-          cpf: data.cpf,
+          nascimento: data.nascimento,
+          identidade: data.identidade.toString(),
+          salario: data.salario,
+          cpf: data.cpf.toString(),
           endereco: data.endereco,
           cidade: data.cidade,
           estado: data.estado,
-          telefone: data.telefone,
+          telefone: data.telefone.toString(),
           empresaId: session.empresa,
         },
       });
     }
+    clienteId = cliente.id;
 
-    const cliente = await prisma.clientes.findFirst({
-      where: {
+    // Criar dados de trabalho
+    await prisma.trabalhos.create({
+      data: {
+        proficao: data.trabalhos.proficao,
+        cargo: data.trabalhos.cargo,
+        endereco: data.trabalhos.endereco,
+        telefone: data.trabalhos.telefone,
         empresaId: session.empresa,
-        cpf: data.cpf,
+        clientesId: clienteId,
       },
     });
-    const clienteId = cliente.id;
-    console.log("Este é o id do cliente:", clienteId);
 
-    // Criar um array para armazenar as promessas de upload
+    // Criar dados de estado civil
+    await prisma.estadoCivil.create({
+      data: {
+        estadocivil: data.estadocivil.EC,
+        nome: data.estadocivil.nome || null,
+        proficao: data.estadocivil.proficao || null,
+        trabalho: data.estadocivil.trabalho || null,
+        Empresas: { connect: { id: session.empresa } },
+        Clientes: { connect: { id: clienteId } },
+      },
+    });
+
+    // Criar referências pessoais e comerciais em paralelo
+    const personalRefs = data.referenciaPessoal.map((element) =>
+      prisma.referenciasPessoal.create({
+        data: {
+          nome: element.nome,
+          telefone: element.telefone,
+          empresasId: session.empresa,
+          clientesId: clienteId,
+        },
+      }),
+    );
+    const commercialRefs = data.referenciaComercial.map((element) =>
+      prisma.referenciasComercial.create({
+        data: {
+          nome: element.nome,
+          telefone: element.telefone,
+          empresasId: session.empresa,
+          clientesId: clienteId,
+        },
+      }),
+    );
+
+    await Promise.all([...personalRefs, ...commercialRefs]);
+
+    // Upload de arquivos para o Firebase
     const uploadPromises = files.map((file, index) => {
-      const timestamp = Date.now(); // Timestamp para garantir unicidade
-      const fileName = `imagem_${clienteId}_${timestamp}_${index}`; // Ex: "imagem_123_1631291212345_0"
+      const timestamp = Date.now();
+      const fileName = `imagem_${clienteId}_${timestamp}_${index}`;
+      const storageRef = ref(
+        storage,
+        `uploads/documentos/empresas/empresaId_${session.empresa}/usuarioId_${clienteId}/${fileName}`,
+      );
 
-      // Criar a promessa para inserir o documento no banco
-      const createDocumentPromise = prisma.documentos.create({
+      const createDocument = prisma.documentos.create({
         data: {
           documento: fileName,
           clientesId: clienteId,
           empresaId: session.empresa,
         },
       });
-
-      const storageRef = ref(
-        storage,
-        `uploads/documentos/empresas/${session.empresa}/${clienteId}/${fileName}`,
-      );
 
       return new Promise((resolve, reject) => {
         const uploadTask = uploadBytesResumable(storageRef, file.file);
@@ -86,39 +127,38 @@ export async function POST(req) {
           (snapshot) => {
             const progress =
               (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(
-              `Upload do arquivo ${file.file.name} está ${progress}% concluído`,
-            );
+            console.log(`Upload ${file.file.name} está ${progress}% concluído`);
           },
-          (error) => {
-            reject(error);
-          },
+          (error) =>
+            reject(new Error(`Erro no upload do arquivo: ${error.message}`)),
           async () => {
-            // Espera a criação do documento ser concluída antes de obter o download URL
-            await createDocumentPromise;
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
+            try {
+              await createDocument;
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (error) {
+              reject(
+                new Error(`Erro ao salvar URL do download: ${error.message}`),
+              );
+            }
           },
         );
       });
     });
 
-    // Aguarde todos os uploads serem concluídos
     const downloadURLs = await Promise.all(uploadPromises);
 
-    // Retornar uma resposta de sucesso com os URLs dos uploads
     return new Response(
-      JSON.stringify({
-        message: "Uploads concluídos!",
-        urls: downloadURLs,
-      }),
+      JSON.stringify({ message: "Uploads concluídos!", urls: downloadURLs }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       },
     );
   } catch (error) {
-    console.error("Erro ao processar o FormData:", error);
-    return new Response("Erro ao processar os dados", { status: 500 });
+    console.error("Erro ao processar dados:", error.message);
+    return new Response(`Erro ao processar os dados: ${error.message}`, {
+      status: 500,
+    });
   }
 }

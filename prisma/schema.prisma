@@ -8,20 +8,24 @@ datasource db {
 }
 
 model Empresas {
-  id         Int          @id @default(autoincrement())
-  nome       String
-  email      String       @unique
-  cnpj       String
-  cpf        String
-  cidade     String
-  endereco   String
-  criadoEm   DateTime     @default(now())
-  estoques   Estoques[]
-  usuarios   Usuarios[]
-  clientes   Clientes[]
-  vendas     Vendas[]
-  PreVendas  PreVendas[]
-  Documentos Documentos[]
+  id                  Int                    @id @default(autoincrement())
+  nome                String
+  email               String                 @unique
+  cnpj                String
+  cpf                 String
+  cidade              String
+  endereco            String
+  criadoEm            DateTime               @default(now())
+  estoques            Estoques[]
+  usuarios            Usuarios[]
+  clientes            Clientes[]
+  vendas              Vendas[]
+  PreVendas           PreVendas[]
+  Documentos          Documentos[]
+  trabalho            Trabalhos[]
+  referenciaPessoal   ReferenciasPessoal[]
+  referenciaComercial ReferenciasComercial[]
+  estadoCivil         EstadoCivil[]
 }
 
 model Estoques {
@@ -33,8 +37,6 @@ model Estoques {
   criadoEm  DateTime @default(now())
   empresaId Int
   empresa   Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade) // Especifica o onDelete aqui
-
-  @@index([empresaId], map: "estoques_empresaId_fkey")
 }
 
 model Usuarios {
@@ -48,28 +50,79 @@ model Usuarios {
   funcao    Funcao      @default(FUNCIONARIO)
   Vendas    Vendas[]
   PreVendas PreVendas[]
-
-  @@index([empresaId], map: "usuarios_empresaId_fkey")
 }
 
 model Clientes {
-  id                      Int          @id @default(autoincrement())
-  nome                    String
-  endereco                String
-  cpf                     String       @unique
-  identidade              String       @unique
-  cidade                  String
-  estado                  String
-  telefone                String
-  email                   String       @unique
- 
-  empresaId               Int
-  empresa                 Empresas     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  vendas                  Vendas[]
-  PreVendas               PreVendas[]
-  Documentos              Documentos[]
+  id         Int      @id @default(autoincrement())
+  nome       String
+  nascimento String
+  cpf        String   @unique
+  identidade String   @unique
+  email      String   @unique
+  salario    Float
+  endereco   String
+  cidade     String
+  estado     String
+  telefone   String
+  criadoEm   DateTime @default(now())
+  empresaId  Int
+  empresa    Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
-  @@index([empresaId], map: "clientes_empresaId_fkey")
+  referenciaPessoal   ReferenciasPessoal[]
+  referenciaComercial ReferenciasComercial[]
+  estadocivil         EstadoCivil[]
+  trabalho            Trabalhos[]
+  vendas              Vendas[]
+  PreVendas           PreVendas[]
+  Documentos          Documentos[]
+}
+
+model ReferenciasPessoal {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  telefone   String
+  Empresas   Empresas @relation(fields: [empresasId], references: [id], onDelete: Cascade)
+  empresasId Int
+  Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  clientesId Int
+  criadoEm   DateTime @default(now())
+}
+
+model ReferenciasComercial {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  telefone   String
+  Empresas   Empresas @relation(fields: [empresasId], references: [id], onDelete: Cascade)
+  empresasId Int
+  Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  clientesId Int
+  criadoEm   DateTime @default(now())
+}
+
+model EstadoCivil {
+  id          Int      @id @default(autoincrement())
+  estadocivil String   @default("solteiro")
+  nome        String?
+  proficao    String?
+  trabalho    String?
+  Empresas    Empresas @relation(fields: [empresasId], references: [id], onDelete: Cascade)
+  empresasId  Int
+  Clientes    Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  clientesId  Int
+  criadoEm    DateTime @default(now())
+}
+
+model Trabalhos {
+  id         Int      @id @default(autoincrement())
+  proficao   String?
+  cargo      String?
+  endereco   String?
+  telefone   String?
+  empresaId  Int
+  empresa    Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  clientesId Int
+  criadoEm   DateTime @default(now())
 }
 
 model Documentos {
@@ -79,6 +132,7 @@ model Documentos {
   empresa    Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   clientesId Int
   Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  criadoEm   DateTime @default(now())
 }
 
 model Vendas {
@@ -97,8 +151,7 @@ model Vendas {
   cliente         Clientes       @relation(fields: [clienteId], references: [id])
   empresaId       Int
   empresa         Empresas       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-
-  @@index([clienteId], map: "vendas_clienteId_fkey")
+  criadoEm        DateTime       @default(now())
 }
 
 model PreVendas {
@@ -117,16 +170,14 @@ model PreVendas {
   dataEntrega       String
   formaPagamento    FormaPagamento
   parcelasCredito   Int?           @default(1)
-
-  vendedorId Int
-  vendedor   Usuarios @relation(fields: [vendedorId], references: [id])
+  criadoEm          DateTime       @default(now())
+  vendedorId        Int
+  vendedor          Usuarios       @relation(fields: [vendedorId], references: [id])
 
   clienteId Int
   cliente   Clientes @relation(fields: [clienteId], references: [id])
   empresaId Int
   empresa   Empresas @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-
-  @@index([empresaId], map: "preVendas_empresaId_fkey")
 }
 
 enum Funcao {
