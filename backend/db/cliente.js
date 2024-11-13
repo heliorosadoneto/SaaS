@@ -37,4 +37,5 @@ async function Read(pesquisaNome) {
   }
 }
 
+
 export default Read;

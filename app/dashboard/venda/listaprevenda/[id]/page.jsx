@@ -1,20 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { AcaoAnalise, getPreVendaCodigo, atualizarPreVenda } from '@/backend/db/preVenda'
-import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaHistory, FaList, FaRegFile } from 'react-icons/fa'
-import { usuario as buscarUsuarioAPI } from '@/backend/db/db'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { useRouter } from 'next/navigation'
+import { FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaHistory, FaRegFile } from 'react-icons/fa'
+import { AcaoAnalise, getPreVendaCodigo, atualizarPreVenda } from '@/backend/db/preVenda'
+import { usuario as buscarUsuarioAPI } from '@/backend/db/db'
 import { ROUTES } from '@/routes/routes'
-import Link from 'next/link'
 import InputPesquisaCliente from '@/components/inputPesquisaCliente'
+import AdcionarAvalsita from '@/backend/db/avalsita'
 
 export default function ProductPage({ params }) {
+  const router = useRouter()
   const { id } = params
   const idnumber = Number(id)
-  const router = useRouter()
 
   const [cliente, setCliente] = useState(null)
   const [produtos, setProdutos] = useState([])
@@ -22,6 +23,11 @@ export default function ProductPage({ params }) {
   const [usuario, setUsuario] = useState(null)
   const [observacaoAnalise, setObservacaoAnalise] = useState('')
   const [observacao, setObservacao] = useState('')
+  const [clienteAvalsitaSelecionado, setClienteAvalsitaSelecionado] = useState(null)
+
+  const handleClienteSelect = useCallback((cliente) => {
+    setClienteAvalsitaSelecionado(cliente)
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,7 +104,11 @@ export default function ProductPage({ params }) {
   }, [idnumber])
 
   const acaoAnalise = async (analise) => {
+    
+    await AdcionarAvalsita(clienteAvalsitaSelecionado[0].id)
+
     try {
+
       const resultado = await AcaoAnalise(analise, idnumber)
       if (resultado === true) {
         toast.success('Status atualizado com sucesso')
@@ -148,194 +158,260 @@ export default function ProductPage({ params }) {
       )}
 
       {cliente && (
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          
-
-            
-          
-            <h2 className="text-2xl font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
-              Informações do Cliente
-            </h2>
-          <p className="text-lg mb-4 text-gray-300 uppercase">{`Vendedor: ${cliente.vendedor.nome}`}</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-700 rounded-lg p-4">
-              {[
-                { label: 'Nome', value: cliente.nome },
-                { label: 'CPF', value: cliente.cpf },
-                { label: 'Identidade', value: cliente.identidade },
-                { label: 'Endereço', value: cliente.endereco },
-
-              ].map(({ label, value }) => (
-                <p key={label} className="mb-2 text-lg">
-                  <strong className="text-gray-400 uppercase">{label}:</strong>{' '}
-                  <span className="text-gray-200">{value}</span>
-                </p>
-              ))}
-              <Link href='*'>
-                <h2 className=" flex items-center gap-2 text-sm font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
-                  <FaRegFile /> Histórico
-                </h2>
-              </Link>
-            </div>
-            <div className="bg-gray-700 rounded-lg p-4">
-              <p className="mb-2 text-lg">
-                <strong className="text-gray-400 uppercase">Valor Total dos Produtos:</strong>{' '}
-                <span className="text-gray-200">R$ {cliente.valorTotal}</span>
-              </p>
-              <div className="mb-2 text-lg flex items-center">
-                <strong className="text-gray-400 uppercase mr-2">Valor a ser pago:</strong>
-                <input
-                  value={cliente.valorPago}
-                  onChange={(e) => setCliente({ ...cliente, valorPago: e.target.value })}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="bg-gray-600 text-white rounded px-2 py-1 w-24"
-                />
-              </div>
-              <div className="mb-2 text-lg flex items-center">
-                <strong className="text-gray-400 uppercase mr-2">Data da Entrega:</strong>
-                <input
-                  type="date"
-                  value={cliente.dataEntrega}
-                  onChange={(e) => setCliente({ ...cliente, dataEntrega: e.target.value })}
-                  className="bg-gray-600 text-white rounded px-2 py-1"
-                />
-              </div>
-              {cliente.enderecoEntrega && (
-                <p className="mb-2 text-lg">
-                  <strong className="text-gray-400 uppercase">Endereço de Entrega:</strong>{' '}
-                  <span className="text-gray-200">{cliente.enderecoEntrega}</span>
-                </p>
-              )}
-              {cliente.formaDePagamento === 'CREDITO' && (
-                <p className="mb-2 text-lg">
-                  <strong className="text-gray-400 uppercase">Valor por Parcela:</strong>{' '}
-                  <span className="text-gray-200">
-                    {`${cliente.parcelas} X R$ ${cliente.valorPago > 0
-                      ? (cliente.valorPago / cliente.parcelas).toFixed(2)
-                      : (cliente.valorTotal / cliente.parcelas).toFixed(2)}`}
-                  </span>
-                </p>
-              )}
-              <p className="text-lg">
-                <strong className="text-gray-400 uppercase">Forma de Pagamento:</strong>{' '}
-                <span className="text-gray-200">{cliente.formaDePagamento}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {cliente && (
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6 mt-6 flex">
-          <div className="w-1/2">
-            {usuario && (
-              <>
-                {usuario.some((usr) => ['GERENTE', 'FINANCEIRO'].includes(usr.funcao)) && (
-                  <>
-                    <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
-                      Observação da Análise
-                    </h2>
-                    <textarea
-                      value={observacaoAnalise}
-                      onChange={(e) => setObservacaoAnalise(e.target.value)}
-                      className="w-full h-32 bg-gray-700 text-white rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Escreva suas observações aqui..."
-                    />
-                  </>
-                )}
-                {usuario.some((usr) => ['FUNCIONARIO'].includes(usr.funcao)) && (
-                  <>
-                    <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
-                      Observação do Funcionário
-                    </h2>
-                    <textarea
-                      value={observacao}
-                      onChange={(e) => setObservacao(e.target.value)}
-                      className="w-full h-32 bg-gray-700 text-white rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Escreva suas observações aqui..."
-                    />
-                  </>
-                )}
-              </>
-            )}
-            <div className="flex gap-4 mb-4">
-              {usuario && usuario.some((usr) => ['GERENTE', 'FINANCEIRO'].includes(usr.funcao)) && (
-                <>
-                  <button
-                    onClick={() => {
-                      acaoAnalise('DEFERIDO')
-                      atualizarPVenda()
-                    }}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                  >
-                    <FaCheckCircle /> Deferir
-                  </button>
-                  <button
-                    onClick={() => {
-                      acaoAnalise('INDEFERIDO')
-                      atualizarPVenda()
-                    }}
-                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                  >
-                    <FaTimesCircle /> Indeferir
-                  </button>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => {
-                acaoAnalise('ANALISE')
-                atualizarPVenda()
-              }}
-              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-            >
-              <FaExclamationTriangle /> Análise
-            </button>
-          </div>
-          <div className="w-1/2 bg-gray-700 rounded-lg p-4 ml-4">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-blue-300 mb-2 uppercase">
-                Observação do Funcionário
-              </h3>
-              <p className="bg-gray-600 text-gray-200 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                {cliente.observacao || 'Nenhuma observação do funcionário.'}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-blue-300 mb-2 uppercase">
-                Observação da Análise
-              </h3>
-              <p className="bg-gray-600 text-gray-200 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                {cliente.observacaoAnalise || 'Nenhuma observação da análise.'}
-              </p>
-            </div>
-          </div>
-        </div>
+        <>
+          <ClienteInfo
+            cliente={cliente}
+            clienteAvalsitaSelecionado={clienteAvalsitaSelecionado}
+            handleClienteSelect={handleClienteSelect}
+          />
+          <ObservacoesSection
+            usuario={usuario}
+            observacaoAnalise={observacaoAnalise}
+            setObservacaoAnalise={setObservacaoAnalise}
+            observacao={observacao}
+            setObservacao={setObservacao}
+            cliente={cliente}
+            acaoAnalise={acaoAnalise}
+            atualizarPVenda={atualizarPVenda}
+          />
+        </>
       )}
 
       {produtos.length > 0 && (
-        <div className="mt-6 ">
-          <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
-            Informações dos Produtos
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {produtos.map((produto, index) => (
-              <div key={index} className="bg-gray-800 rounded-lg p-5 shadow-lg border border-gray-700">
-                <h3 className="text-xl font-semibold text-blue-300 mb-3 uppercase">
-                  {produto.produto}
-                </h3>
-                <p className="text-lg">
-                  <strong className="text-gray-400 uppercase">Valor:</strong>{' '}
-                  <span className="text-gray-200">R$ {produto.valor.toFixed(2)}</span>
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ProdutosInfo produtos={produtos} />
       )}
+    </div>
+  )
+}
+
+function ClienteInfo({ cliente, clienteAvalsitaSelecionado, handleClienteSelect }) {
+  return (
+    <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+      <h2 className="text-2xl font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
+        Informações do Cliente
+      </h2>
+      <p className="text-lg mb-4 text-gray-300 uppercase">{`Vendedor: ${cliente.vendedor.nome}`}</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ClienteInfoLeft
+          cliente={cliente}
+          clienteAvalsitaSelecionado={clienteAvalsitaSelecionado}
+          handleClienteSelect={handleClienteSelect}
+        />
+        <ClienteInfoRight cliente={cliente} />
+      </div>
+    </div>
+  )
+}
+
+function ClienteInfoLeft({ cliente, clienteAvalsitaSelecionado, handleClienteSelect }) {
+  const removeAvalsita = () => {
+    handleClienteSelect(null);
+  };
+
+  return (
+    <div className="bg-gray-700 rounded-lg p-4">
+      {[
+        { label: 'Nome', value: cliente.nome },
+        { label: 'CPF', value: cliente.cpf },
+        { label: 'Identidade', value: cliente.identidade },
+        { label: 'Endereço', value: cliente.endereco },
+      ].map(({ label, value }) => (
+        <p key={label} className="mb-2 text-lg">
+          <strong className="text-gray-400 uppercase">{label}:</strong>{' '}
+          <span className="text-gray-200">{value}</span>
+        </p>
+      ))}
+      <Link href='*'>
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-blue-300 mb-6 pb-2 border-b border-gray-700 uppercase">
+          <FaRegFile /> Histórico
+        </h2>
+      </Link>
+      <div className="mt-4 bg-gray-800 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-blue-300 mb-2 uppercase">Avalista</h3>
+        <div className="mb-2">
+          {clienteAvalsitaSelecionado ? (
+            <div className="flex items-center justify-between">
+              <p className="text-gray-200">
+                {clienteAvalsitaSelecionado.map((cliente) => cliente.nome).join(', ')}
+              </p>
+              <button
+                onClick={removeAvalsita}
+                className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md text-sm transition-colors"
+              >
+                Remover
+              </button>
+            </div>
+          ) : (
+            <p className="text-gray-400 italic">Nenhum avalista selecionado</p>
+          )}
+        </div>
+        <InputPesquisaCliente onClienteSelect={handleClienteSelect} className="w-full bg-gray-700 text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+    </div>
+  )
+}
+
+function ClienteInfoRight({ cliente }) {
+  return (
+    <div className="bg-gray-700 rounded-lg p-4">
+      <p className="mb-2 text-lg">
+        <strong className="text-gray-400 uppercase">Valor Total dos Produtos:</strong>{' '}
+        <span className="text-gray-200">R$ {cliente.valorTotal}</span>
+      </p>
+      <div className="mb-2 text-lg flex items-center">
+        <strong className="text-gray-400 uppercase mr-2">Valor a ser pago:</strong>
+        <input
+          value={cliente.valorPago}
+          onChange={(e) => setCliente({ ...cliente, valorPago: e.target.value })}
+          type="number"
+          step="0.01"
+          min="0"
+          className="bg-gray-600 text-white rounded px-2 py-1 w-24"
+        />
+      </div>
+      <div className="mb-2 text-lg flex items-center">
+        <strong className="text-gray-400 uppercase mr-2">Data da Entrega:</strong>
+        <input
+          type="date"
+          value={cliente.dataEntrega}
+          onChange={(e) => setCliente({ ...cliente, dataEntrega: e.target.value })}
+          className="bg-gray-600 text-white rounded px-2 py-1"
+        />
+      </div>
+      {cliente.enderecoEntrega && (
+        <p className="mb-2 text-lg">
+          <strong className="text-gray-400 uppercase">Endereço de Entrega:</strong>{' '}
+          <span className="text-gray-200">{cliente.enderecoEntrega}</span>
+        </p>
+      )}
+      {cliente.formaDePagamento === 'CREDITO' && (
+        <p className="mb-2 text-lg">
+          <strong className="text-gray-400 uppercase">Valor por Parcela:</strong>{' '}
+          <span className="text-gray-200">
+            {`${cliente.parcelas} X R$ ${cliente.valorPago > 0
+              ? (cliente.valorPago / cliente.parcelas).toFixed(2)
+              : (cliente.valorTotal / cliente.parcelas).toFixed(2)}`}
+          </span>
+        </p>
+      )}
+      <p className="text-lg">
+        <strong className="text-gray-400 uppercase">Forma de Pagamento:</strong>{' '}
+        <span className="text-gray-200">{cliente.formaDePagamento}</span>
+      </p>
+    </div>
+  )
+}
+
+function ObservacoesSection({ usuario, observacaoAnalise, setObservacaoAnalise, observacao, setObservacao, cliente, acaoAnalise, atualizarPVenda }) {
+  return (
+    <div className="bg-gray-800 rounded-lg shadow-lg p-6 mt-6 flex">
+      <div className="w-1/2">
+        {usuario && (
+          <>
+            {usuario.some((usr) => ['GERENTE', 'FINANCEIRO'].includes(usr.funcao)) && (
+              <>
+                <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
+                  Observação da Análise
+                </h2>
+                <textarea
+                  value={observacaoAnalise}
+                  onChange={(e) => setObservacaoAnalise(e.target.value)}
+                  className="w-full h-32 bg-gray-700 text-white rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Escreva suas observações aqui..."
+                />
+              </>
+            )}
+            {usuario.some((usr) => ['FUNCIONARIO'].includes(usr.funcao)) && (
+              <>
+                <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
+                  Observação do Funcionário
+                </h2>
+                <textarea
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                  className="w-full h-32 bg-gray-700 text-white rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Escreva suas observações aqui..."
+                />
+              </>
+            )}
+          </>
+        )}
+        <div className="flex gap-4 mb-4">
+          {usuario && usuario.some((usr) => ['GERENTE', 'FINANCEIRO'].includes(usr.funcao)) && (
+            <>
+              <button
+                onClick={() => {
+                  acaoAnalise('DEFERIDO')
+                  atualizarPVenda()
+                }}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                <FaCheckCircle /> Deferir
+              </button>
+              <button
+                onClick={() => {
+                  acaoAnalise('INDEFERIDO')
+                  atualizarPVenda()
+                }}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                <FaTimesCircle /> Indeferir
+              </button>
+            </>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            acaoAnalise('ANALISE')
+            atualizarPVenda()
+          }}
+          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+        >
+          <FaExclamationTriangle /> Análise
+        </button>
+      </div>
+      <div className="w-1/2 bg-gray-700 rounded-lg p-4 ml-4">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-blue-300 mb-2 uppercase">
+            Observação do Funcionário
+          </h3>
+          <p className="bg-gray-600 text-gray-200 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">
+            {cliente.observacao || 'Nenhuma observação do funcionário.'}
+          </p>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-blue-300 mb-2 uppercase">
+            Observação da Análise
+          </h3>
+          <p className="bg-gray-600 text-gray-200 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">
+            {cliente.observacaoAnalise || 'Nenhuma observação da análise.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProdutosInfo({ produtos }) {
+  return (
+    <div className="mt-6">
+      <h2 className="text-2xl font-semibold text-blue-300 mb-4 uppercase">
+        Informações dos Produtos
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {produtos.map((produto, index) => (
+          <div key={index} className="bg-gray-800 rounded-lg p-5 shadow-lg border border-gray-700">
+            <h3 className="text-xl font-semibold text-blue-300 mb-3 uppercase">
+              {produto.produto}
+            </h3>
+            <p className="text-lg">
+              <strong className="text-gray-400 uppercase">Valor:</strong>{' '}
+              <span className="text-gray-200">R$ {produto.valor.toFixed(2)}</span>
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

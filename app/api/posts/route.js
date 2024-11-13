@@ -1,7 +1,9 @@
 import prisma from "@/backend/prisma";
 import { verificaSessionEmpresa } from "@/backend/verificaSessionEmpresa";
-import { storage } from "@/utils/firebaseCofig";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+// import { storage } from "@/utils/firebaseCofig";
+// import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
 export async function POST(req) {
   const session = await verificaSessionEmpresa();
@@ -30,7 +32,7 @@ export async function POST(req) {
     });
 
     // Verificar se o cliente já existe pelo CPF e empresa
-    let cliente = await prisma.clientes.findFirst({
+    let cliente = await prisma.clientes.findUnique({
       where: { cpf: data.cpf.toString(), empresaId: session.empresa },
     });
 
@@ -103,58 +105,68 @@ export async function POST(req) {
     await Promise.all([...personalRefs, ...commercialRefs]);
 
     // Upload de arquivos para o Firebase
-    const uploadPromises = files.map((file, index) => {
+    const uploadPromises = files.map(async (file, index) => {
       const timestamp = Date.now();
       const fileName = `imagem_${clienteId}_${timestamp}_${index}`;
-      const storageRef = ref(
-        storage,
-        `uploads/documentos/empresas/empresaId_${session.empresa}/usuarioId_${clienteId}/${fileName}`,
-      );
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'documentos', `empresa_${session.empresa}`, `usuario_${clienteId}`);
+      // Create directories if they don't exist
+       await mkdir(uploadDir, { recursive: true });
 
-      const createDocument = prisma.documentos.create({
+      // Convert File object to Buffer
+      const bytes = await file.file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Save file to disk
+      const filePath = path.join(uploadDir, fileName);
+      await writeFile(filePath, buffer);
+
+      // const storageRef = ref(
+      //   storage,
+      //   `uploads/documentos/empresas/empresaId_${session.empresa}/usuarioId_${clienteId}/${fileName}`,
+      // );
+
+      await prisma.documentos.create({
         data: {
           documento: fileName,
           clientesId: clienteId,
           empresaId: session.empresa,
         },
       });
+      return `/uploads/documentos/empresa_${session.empresa}/usuario_${clienteId}/${fileName}`;
 
-      return new Promise((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(storageRef, file.file);
+      // return new Promise((resolve, reject) => {
+      //   const uploadTask = uploadBytesResumable(storageRef, file.file);
 
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`Upload ${file.file.name} está ${progress}% concluído`);
-          },
-          (error) =>
-            reject(new Error(`Erro no upload do arquivo: ${error.message}`)),
-          async () => {
-            try {
-              await createDocument;
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadURL);
-            } catch (error) {
-              reject(
-                new Error(`Erro ao salvar URL do download: ${error.message}`),
-              );
-            }
-          },
-        );
-      });
+      //   uploadTask.on(
+      //     "state_changed",
+      //     (snapshot) => {
+      //       const progress =
+      //         (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      //       console.log(`Upload ${file.file.name} está ${progress}% concluído`);
+      //     },
+      //     (error) =>
+      //       reject(new Error(`Erro no upload do arquivo: ${error.message}`)),
+      //     async () => {
+      //       try {
+      //         await createDocument;
+      //         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      //         resolve(downloadURL);
+      //       } catch (error) {
+      //         reject(
+      //           new Error(`Erro ao salvar URL do download: ${error.message}`),
+      //         );
+      //       }
+      //     },
+      //   );
+      // });
     });
 
-    const downloadURLs = await Promise.all(uploadPromises);
+    // const downloadURLs = await Promise.all(uploadPromises);
 
-    return new Response(
-      JSON.stringify({ message: "Uploads concluídos!", urls: downloadURLs }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ message: "Uploads concluídos!" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Erro ao processar dados:", error.message);
     return new Response(`Erro ao processar os dados: ${error.message}`, {

@@ -26,6 +26,7 @@ model Empresas {
   referenciaPessoal   ReferenciasPessoal[]
   referenciaComercial ReferenciasComercial[]
   estadoCivil         EstadoCivil[]
+  Avalistas           Avalistas[]
 }
 
 model Estoques {
@@ -75,6 +76,15 @@ model Clientes {
   vendas              Vendas[]
   PreVendas           PreVendas[]
   Documentos          Documentos[]
+  Avalistas           Avalistas[]
+}
+
+model Avalistas {
+  id         Int       @id @default(autoincrement())
+  Clientes   Clientes @relation(fields: [clientesId], references: [id], onDelete: Cascade)
+  clientesId Int
+  Empresas   Empresas @relation(fields: [empresasId], references: [id], onDelete: Cascade)
+  empresasId Int
 }
 
 model ReferenciasPessoal {
