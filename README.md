@@ -16,8 +16,7 @@ Este é um projeto desenvolvido em [Next.js](https://nextjs.org/), criado para o
 - **Framework:** [Next.js](https://nextjs.org/)
 - **ORM:** [Prisma.io](https://www.prisma.io/) - Relacionamento entre tabelas e separação de dados por empresa.
 - **Banco de Dados:** MySQL
-- **Frontend:** TailwindCSS, Chakra UI, Styled Components
-- **Outras:** Firebase, Supabase, API RESTful
+- **Frontend:** TailwindCSS.
 
 ## 📖 Como Iniciar o Projeto
 
