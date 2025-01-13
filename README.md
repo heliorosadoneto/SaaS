@@ -18,6 +18,8 @@ Este é um projeto desenvolvido em [Next.js](https://nextjs.org/), criado para o
 - **Banco de Dados:** MySQL
 - **Frontend:** TailwindCSS.
 
+<a href='https://www.linkedin.com/posts/helio-rosado-neto-1b1802168_apresentando-o-in%C3%ADcio-de-um-projeto-inovador-activity-7253370432349741056-cgeq?utm_source=share&utm_medium=member_desktop'>Link da Publicação</a>
+
 ## 📖 Como Iniciar o Projeto
 
 Para iniciar o servidor de desenvolvimento:
